@@ -180,9 +180,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Response Headers
-header('Content-Type: application/json; charset=UTF-8');
-header('X-API-Version: ' . API_VERSION);
+// Error Reporting Configuration
+if (SHOW_ERRORS) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING | E_USER_ERROR | E_USER_WARNING);
+    ini_set('display_errors', 0);
+}
+
+ini_set('log_errors', 1);
+ini_set('error_log', LOG_FILE);
+
+// Custom Error Handler
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (LOG_ENABLED && LOG_LEVEL !== 'ERROR') {
+        $message = "[$errno] $errstr in $errfile on line $errline";
+        error_log(date('Y-m-d H:i:s') . " - " . $message . "\n", 3, LOG_FILE);
+    }
+
+    if (SHOW_ERRORS) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error',
+            'error' => $errstr,
+            'file' => $errfile,
+            'line' => $errline
+        ]);
+        exit;
+    }
+});
+
+// Custom Exception Handler
+set_exception_handler(function($exception) {
+    if (LOG_ENABLED) {
+        error_log(date('Y-m-d H:i:s') . " - Uncaught exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine() . "\n", 3, LOG_FILE);
+    }
+
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Internal server error',
+        'error' => SHOW_ERRORS ? $exception->getMessage() : 'An error occurred while processing your request'
+    ]);
+});
 
 // CORS Headers
 header('Access-Control-Allow-Origin: ' . CORS_ORIGIN);
