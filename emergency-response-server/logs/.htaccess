@@ -1,0 +1,12 @@
+# Restrict access to log files
+Order Allow,Deny
+Deny from all
+
+# Disable directory listing
+Options -Indexes
+
+# Prevent script execution
+<FilesMatch "\.(php|phtml|phar)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

@@ -1,0 +1,15 @@
+# Restrict direct access to upload directories
+Options -Indexes
+<FilesMatch "\.(php|phtml|phar)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Only allow image files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Set proper file permissions
+php_flag engine off
